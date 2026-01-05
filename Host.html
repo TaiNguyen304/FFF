@@ -601,13 +601,31 @@
           .eq('room_code', currentRoom);
       };
       document.getElementById("btnExportResults").onclick = () => {
+        if (answers.length === 0) {
+          showPopup("Không có dữ liệu để xuất!", "error");
+          return;
+        }
+
         const wb = XLSX.utils.book_new();
-        // Tiêu đề cột
         const header = ["Tên", "Đáp án", "Thời gian (s)"];
         const data = [header];
 
-        // Chuẩn bị dữ liệu
+        // LOGIC MỚI: Chỉ lấy đáp án cuối cùng của mỗi thí sinh
+        // Vì answers được push vào theo thứ tự thời gian, 
+        // việc dùng Map đè theo 'name' sẽ giữ lại bản ghi cuối cùng.
+        const latestAnswersMap = new Map();
         answers.forEach(a => {
+          latestAnswersMap.set(a.name, a);
+        });
+
+        // Chuyển Map về Array để xử lý xuất dữ liệu
+        const finalExportData = Array.from(latestAnswersMap.values());
+
+        // Sắp xếp lại theo thời gian trước khi xuất (tùy chọn)
+        finalExportData.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+        // Chuẩn bị dữ liệu cho Excel
+        finalExportData.forEach(a => {
           data.push([
             a.name,
             a.answer_text,
@@ -616,28 +634,23 @@
         });
 
         const ws = XLSX.utils.aoa_to_sheet(data);
-
-        // Lấy phạm vi của bảng
         const range = XLSX.utils.decode_range(ws['!ref']);
 
-        for (let R = 0; R <= range.e.r; ++R) { // Chạy từ dòng 0 (bao gồm cả tiêu đề)
+        for (let R = 0; R <= range.e.r; ++R) {
           for (let C = 0; C <= range.e.c; ++C) {
             const curAddr = XLSX.utils.encode_cell({ r: R, c: C });
             if (!ws[curAddr]) continue;
 
-            // Mặc định tất cả các ô đều chữ Đậm (Bold)
             if (!ws[curAddr].s) ws[curAddr].s = {};
             ws[curAddr].s.font = { bold: true };
 
-            // Kiểm tra nếu không phải dòng tiêu đề (R > 0) để xét logic tô màu đáp án đúng
             if (R > 0) {
-              const answerCellAddress = XLSX.utils.encode_cell({ r: R, c: 1 }); // Cột B (index 1) là đáp án
+              const answerCellAddress = XLSX.utils.encode_cell({ r: R, c: 1 });
               const cellValue = ws[answerCellAddress] ? ws[answerCellAddress].v : "";
 
-              // Nếu trùng với đáp án đúng: Tô nền xanh, chữ trắng đậm
               if (currentCorrectAnswer && String(cellValue).trim().toLowerCase() === currentCorrectAnswer.trim().toLowerCase()) {
                 ws[curAddr].s.fill = { fgColor: { rgb: "0000FF" } }; // Nền Blue
-                ws[curAddr].s.font = { color: { rgb: "FFFFFF" }, bold: true }; // Chữ White Bold
+                ws[curAddr].s.font = { color: { rgb: "FFFFFF" }, bold: true }; // Chữ White
               }
             }
           }
