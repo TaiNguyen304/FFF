@@ -74,15 +74,50 @@
       padding: 0 15px;
     }
 
-    #btnCreate { background: yellow; color: black; }
-    #btnJoinManager { background: green; color: white; }
-    #btnListUsers { background: blue; color: white; }
-    #btnExportResults { background: purple; color: white; }
-    #btnManualAdd { background: red; color: white; }
-    #unlockAnswersLimited { background: purple; color: white; }
-    #unlockAnswersPermanent { background: blue; color: white; }
-    #lockAnswers { background: green; color: white; }
-    #resetAnswers { background: yellow; color: black; }
+    #btnCreate {
+      background: yellow;
+      color: black;
+    }
+
+    #btnJoinManager {
+      background: green;
+      color: white;
+    }
+
+    #btnListUsers {
+      background: blue;
+      color: white;
+    }
+
+    #btnExportResults {
+      background: purple;
+      color: white;
+    }
+
+    #btnManualAdd {
+      background: red;
+      color: white;
+    }
+
+    #unlockAnswersLimited {
+      background: purple;
+      color: white;
+    }
+
+    #unlockAnswersPermanent {
+      background: blue;
+      color: white;
+    }
+
+    #lockAnswers {
+      background: green;
+      color: white;
+    }
+
+    #resetAnswers {
+      background: yellow;
+      color: black;
+    }
 
     /* Nút Nhập đáp án đúng */
     #btnSetCorrect {
@@ -107,8 +142,16 @@
       font-size: 17px;
     }
 
-    .open { background: green; color: white; box-shadow: 0 0 10px green; }
-    .locked { background: red; color: white; }
+    .open {
+      background: green;
+      color: white;
+      box-shadow: 0 0 10px green;
+    }
+
+    .locked {
+      background: red;
+      color: white;
+    }
 
     #popupMessage {
       position: fixed;
@@ -127,7 +170,10 @@
       pointer-events: none;
     }
 
-    .error { background-color: red; color: white; }
+    .error {
+      background-color: red;
+      color: white;
+    }
 
     .control-group {
       margin-bottom: 15px;
@@ -142,7 +188,10 @@
       align-items: center;
     }
 
-    .control-item label { font-weight: bold; margin-right: 10px; }
+    .control-item label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
 
     .time-elapsed-display {
       font-size: 1.2em;
@@ -177,7 +226,9 @@
       overflow-y: auto;
     }
 
-    .popup-content h3 { margin-top: 0; }
+    .popup-content h3 {
+      margin-top: 0;
+    }
 
     .add-row {
       display: flex;
@@ -187,7 +238,11 @@
       justify-content: center;
     }
 
-    .add-row input { width: 120px; font-weight: bold; color: black; }
+    .add-row input {
+      width: 120px;
+      font-weight: bold;
+      color: black;
+    }
 
     #addRowsContainer {
       margin-top: 10px;
@@ -204,8 +259,15 @@
       margin-top: 15px;
     }
 
-    #userListContainer ul { list-style: none; padding: 0; }
-    #userListContainer li { padding: 5px 0; border-bottom: 1px dotted #eee; }
+    #userListContainer ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    #userListContainer li {
+      padding: 5px 0;
+      border-bottom: 1px dotted #eee;
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -382,10 +444,10 @@
       }
       data.forEach(item => {
         const row = body.insertRow();
-        
+
         // Kiểm tra đáp án đúng để tô màu (Không phân biệt hoa thường, khoảng trắng)
         if (currentCorrectAnswer && item.answer_text.trim().toLowerCase() === currentCorrectAnswer.trim().toLowerCase()) {
-            row.className = "correct-row";
+          row.className = "correct-row";
         }
 
         row.insertCell().innerText = item.name;
@@ -465,25 +527,30 @@
         const name = row.querySelector(".add-name").value.trim();
         const ans = row.querySelector(".add-answer").value.trim();
         const time = parseFloat(row.querySelector(".add-time").value);
-        if(name && ans) {
-            inserts.push({ room_code: currentRoom, name, answer_text: ans, created_at: new Date(answerStartTime + time * 1000).toISOString() });
+        if (name && ans) {
+          inserts.push({ room_code: currentRoom, name, answer_text: ans, created_at: new Date(answerStartTime + time * 1000).toISOString() });
         }
       }
-      if(inserts.length > 0) await supabase.from('answers').insert(inserts);
+      if (inserts.length > 0) await supabase.from('answers').insert(inserts);
       document.getElementById("addPopup").style.display = "none";
     }
 
     function handleRoomUpdate(room) {
       roomInfoData = room;
       answerStartTime = room.answer_open_time ? new Date(room.answer_open_time).getTime() : 0;
-      if (room.answer_reset_at !== lastAnswerResetAt) { 
-          lastAnswerResetAt = room.answer_reset_at; 
-          answers = []; 
-          currentCorrectAnswer = ""; // Reset đáp án đúng khi phòng reset
-          document.getElementById("correctAnswerInput").value = "";
-          renderAnswers(); 
+
+      // CẬP NHẬT ĐÁP ÁN ĐÚNG TỪ DATABASE ĐỂ ĐỒNG BỘ GIỮA HOST/MANAGER
+      currentCorrectAnswer = room.correct_answer || "";
+      document.getElementById("correctAnswerInput").value = currentCorrectAnswer;
+
+      if (room.answer_reset_at !== lastAnswerResetAt) {
+        lastAnswerResetAt = room.answer_reset_at;
+        answers = [];
+        renderAnswers();
       }
+
       updateUI();
+      renderAnswers(); // Vẽ lại để tô màu dựa trên đáp án đúng vừa nhận
     }
 
     function subscribeRealtime() {
@@ -497,9 +564,9 @@
       await supabase.from('rooms').update({ answer_status: status, answer_duration: duration, answer_open_time: status === 'open' ? now : null }).eq('room_code', currentRoom);
     }
 
-    async function fetchUsers() { 
-      const { data } = await supabase.from('participants').select('*').eq('room_code', currentRoom); 
-      allParticipants = data || []; 
+    async function fetchUsers() {
+      const { data } = await supabase.from('participants').select('*').eq('room_code', currentRoom);
+      allParticipants = data || [];
       renderUserListPopup();
     }
 
@@ -524,19 +591,26 @@
       document.getElementById("lockAnswers").onclick = () => updateRoomStatus('locked', 0);
       document.getElementById("resetAnswers").onclick = async () => {
         await supabase.from('answers').delete().eq('room_code', currentRoom);
-        await supabase.from('rooms').update({ answer_reset_at: new Date().toISOString(), answer_status: 'locked' }).eq('room_code', currentRoom);
+        // Reset cả correct_answer về trống khi bấm Reset đáp án
+        await supabase.from('rooms')
+          .update({
+            answer_reset_at: new Date().toISOString(),
+            answer_status: 'locked',
+            correct_answer: ""
+          })
+          .eq('room_code', currentRoom);
       };
       document.getElementById("btnExportResults").onclick = () => {
         const wb = XLSX.utils.book_new();
         // Tiêu đề cột
         const header = ["Tên", "Đáp án", "Thời gian (s)"];
         const data = [header];
-        
+
         // Chuẩn bị dữ liệu
         answers.forEach(a => {
           data.push([
-            a.name, 
-            a.answer_text, 
+            a.name,
+            a.answer_text,
             ((new Date(a.created_at).getTime() - answerStartTime) / 1000).toFixed(2)
           ]);
         });
@@ -545,7 +619,7 @@
 
         // Lấy phạm vi của bảng
         const range = XLSX.utils.decode_range(ws['!ref']);
-        
+
         for (let R = 0; R <= range.e.r; ++R) { // Chạy từ dòng 0 (bao gồm cả tiêu đề)
           for (let C = 0; C <= range.e.c; ++C) {
             const curAddr = XLSX.utils.encode_cell({ r: R, c: C });
@@ -577,13 +651,13 @@
       document.getElementById("btnManualAdd").onclick = () => { generateAddRows(); document.getElementById("addPopup").style.display = "flex"; };
       document.getElementById("btnCloseAdd").onclick = () => document.getElementById("addPopup").style.display = "none";
       document.getElementById("btnConfirmAdd").onclick = handleConfirmAdd;
-      
+
       document.getElementById("btnListUsers").onclick = () => {
-          document.getElementById("listPopup").style.display = "flex";
-          renderUserListPopup();
+        document.getElementById("listPopup").style.display = "flex";
+        renderUserListPopup();
       };
       document.getElementById("btnCloseList").onclick = () => {
-          document.getElementById("listPopup").style.display = "none";
+        document.getElementById("listPopup").style.display = "none";
       };
 
       // Xử lý Popup Đáp án đúng
@@ -594,19 +668,29 @@
       const correctAnswerInput = document.getElementById("correctAnswerInput");
 
       btnSetCorrect.onclick = () => {
-          correctPopup.style.display = "flex";
-          correctAnswerInput.focus();
+        correctPopup.style.display = "flex";
+        correctAnswerInput.focus();
       };
 
       btnCloseCorrect.onclick = () => {
-          correctPopup.style.display = "none";
+        correctPopup.style.display = "none";
       };
 
-      btnSaveCorrect.onclick = () => {
-          currentCorrectAnswer = correctAnswerInput.value.trim();
-          renderAnswers(); // Vẽ lại bảng để tô màu các hàng đúng
+      btnSaveCorrect.onclick = async () => {
+        const val = correctAnswerInput.value.trim();
+
+        // Lưu vào database thay vì chỉ lưu biến cục bộ
+        const { error } = await supabase
+          .from('rooms')
+          .update({ correct_answer: val })
+          .eq('room_code', currentRoom);
+
+        if (!error) {
           correctPopup.style.display = "none";
-          showPopup("Đã cập nhật đáp án đúng!");
+          showPopup("Đã cập nhật đáp án đúng cho toàn phòng!");
+        } else {
+          showPopup("Lỗi đồng bộ: " + error.message, "error");
+        }
       };
     };
   </script>

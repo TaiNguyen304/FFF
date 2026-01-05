@@ -263,7 +263,7 @@
             // Kiểm tra Reset đáp án từ Host
             if (room.answer_reset_at && room.answer_reset_at !== lastResetAt) {
                 lastResetAt = room.answer_reset_at;
-                resultStatus.style.display = "none"; // Ẩn ô cam thông báo
+                resultStatus.style.display = "none";
                 answerInput.value = "";
                 updateButtonStyles();
             }
@@ -278,6 +278,10 @@
                     answerInput.classList.remove("locked");
                     answerInput.value = "";
                     answerInput.disabled = false;
+
+                    // THÊM DÒNG NÀY ĐỂ TỰ ĐỘNG FOCUS
+                    setTimeout(() => answerInput.focus(), 50);
+
                     resultStatus.style.display = "none";
                     updateButtonStyles();
                     startTimer(room.answer_duration);
@@ -304,7 +308,7 @@
                 let rem = (end - performance.now()) / 1000;
                 if (rem <= 0) {
                     document.getElementById("answerCountdown").innerText = "0.000s";
-                    lockedAnswer = true; 
+                    lockedAnswer = true;
                     btnSend.classList.add("locked");
                     answerInput.classList.add("locked");
                     answerInput.disabled = true;
@@ -349,10 +353,10 @@
             myRoom = code; myName = name;
             document.getElementById("loginArea").style.display = "none";
             document.getElementById("gameArea").style.display = "flex";
-            
+
             // Lấy trạng thái phòng ban đầu
             const { data } = await supabase.from('rooms').select('*').eq('room_code', code).single();
-            if(data) handleRoomUpdate(data);
+            if (data) handleRoomUpdate(data);
 
             supabase.channel(`room-${code}`).on('postgres_changes', {
                 event: 'UPDATE', schema: 'public', table: 'rooms', filter: `room_code=eq.${code}`
