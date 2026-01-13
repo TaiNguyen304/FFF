@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>FFF Thí sinh - Single Choice</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eef;
+            text-align: center;
+            padding: 10px;
+            user-select: none;
+            margin: 0;
+        }
+
+        #loginArea {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 100px;
+        }
+
+        input,
+        button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button:hover,
+        .fff-btn:hover:not(.locked) {
+            background-color: orange !important;
+            color: white !important;
+            cursor: pointer;
+        }
+
+        #gameArea {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        .timer-countdown {
+            color: red;
+            font-size: 35px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        #resultStatus {
+            width: 95%;
+            max-width: 600px;
+            background: orange;
+            color: white;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: none;
+            border: 2px solid #1e7e34;
+        }
+
+        .input-row {
+            display: flex;
+            justify-content: center;
+            width: 95%;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        #answer {
+            flex: 1;
+            height: 60px;
+            font-size: 30px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        #btnSend {
+            width: 100px;
+            background: yellow;
+            border: 2px solid #daa520;
+        }
+
+        .fff-controls {
+            display: flex;
+            width: 95%;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .fff-btn {
+            flex: 1;
+            height: 60px;
+            font-size: 22px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+
+        .btn-reset { background: red; }
+        .btn-letter { background: blue; }
+        .btn-active { background: black !important; }
+
+        .locked {
+            background: #555 !important;
+            color: #ccc !important;
+            cursor: not-allowed !important;
+            opacity: 0.6;
+        }
+
+        #popupMessage {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            opacity: 0;
+            transition: 0.5s;
+            z-index: 1000;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+    <div id="loginArea">
+        <h1>FFF Thí sinh</h1>
+        <input id="roomCode" placeholder="Mã phòng (6 số)">
+        <input id="name" placeholder="Tên của bạn">
+        <input id="positionInput" type="number" placeholder="Vị trí (1-100)">
+        <button id="btnJoin" style="background: purple; color: white;">Vào phòng</button>
+    </div>
+
+    <div id="gameArea">
+        <div class="timer-info" style="font-weight: bold;">Thời gian: <span id="answerCountdown" class="timer-countdown">--.--s</span></div>
+        <div id="resultStatus"></div>
+
+        <div class="input-row">
+            <input id="answer" placeholder="?" maxlength="1" class="locked" disabled>
+            <button id="btnSend" class="locked">GỬI</button>
+        </div>
+
+        <div class="fff-controls">
+            <button id="btnReset" class="fff-btn btn-reset locked" onclick="pressReset()">RESET</button>
+            <button class="fff-btn btn-letter locked" id="btnA" onclick="pressLetter('A')">A</button>
+            <button class="fff-btn btn-letter locked" id="btnB" onclick="pressLetter('B')">B</button>
+            <button class="fff-btn btn-letter locked" id="btnC" onclick="pressLetter('C')">C</button>
+            <button class="fff-btn btn-letter locked" id="btnD" onclick="pressLetter('D')">D</button>
+        </div>
+
+        <button id="btnLeave" style="width: 95%; background: green; color: white; border: none; padding: 10px; border-radius: 6px;">Rời phòng</button>
+    </div>
+
+    <div id="popupMessage"></div>
+
+    <script>
+        var SUPABASE_URL = "https://rsvggeknetiacezwvgxy.supabase.co";
+        var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzdmdnZWtuZXRpYWNlend2Z3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ0OTI0NzksImV4cCI6MjA4MDA2ODQ3OX0.mkrHJaOA2axmVx8o5M0AOoyiVdmIFyNdQMiQahSvdEU";
+        var supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let myRoom = "", myName = "", lockedAnswer = true, answerInterval = null;
+        let serverAnswerOpenTime = 0, localAnswerReceiveTime = 0, lastResetAt = null;
+        let hasSubmitted = false;
+
+        const answerInput = document.getElementById("answer");
+        const btnSend = document.getElementById("btnSend");
+        const resultStatus = document.getElementById("resultStatus");
+
+        function showPopup(msg) {
+            const p = document.getElementById("popupMessage");
+            p.innerText = msg; p.style.opacity = 1; p.style.top = "50px"; p.style.backgroundColor = "orange"; p.style.fontWeight = "bold";
+            setTimeout(() => { p.style.opacity = 0; p.style.top = "20px"; }, 2000);
+        }
+
+        window.addEventListener('keydown', function (e) {
+            if (e.key === "Enter") {
+                if (!lockedAnswer && !hasSubmitted && answerInput.value) {
+                    e.preventDefault();
+                    btnSend.click();
+                }
+            }
+        });
+
+        answerInput.addEventListener('input', function () {
+            if (lockedAnswer || hasSubmitted) { this.value = ""; return; }
+            this.value = this.value.toUpperCase().replace(/[^ABCD]/g, '').charAt(0);
+            updateButtonStyles();
+        });
+
+        function pressLetter(char) {
+            if (lockedAnswer || hasSubmitted) return;
+            answerInput.value = char;
+            updateButtonStyles();
+        }
+
+        function pressReset() {
+            if (lockedAnswer || hasSubmitted) return;
+            answerInput.value = "";
+            updateButtonStyles();
+        }
+
+        function updateButtonStyles() {
+            const val = answerInput.value;
+            ['A', 'B', 'C', 'D'].forEach(char => {
+                const btn = document.getElementById("btn" + char);
+                if (val === char) btn.classList.add("btn-active");
+                else btn.classList.remove("btn-active");
+            });
+        }
+
+        function lockUI(isLocked) {
+            lockedAnswer = isLocked;
+            const elements = [btnSend, answerInput, ...document.querySelectorAll('.fff-btn')];
+            elements.forEach(el => {
+                if (isLocked) el.classList.add("locked");
+                else el.classList.remove("locked");
+                if (el === answerInput) el.disabled = isLocked;
+            });
+        }
+
+        async function handleRoomUpdate(room) {
+            if (room.answer_reset_at && room.answer_reset_at !== lastResetAt) {
+                lastResetAt = room.answer_reset_at;
+                resultStatus.style.display = "none";
+                answerInput.value = "";
+                hasSubmitted = false;
+                updateButtonStyles();
+            }
+
+            if (room.answer_status === 'open') {
+                const newStart = new Date(room.answer_open_time).getTime();
+                if (serverAnswerOpenTime !== newStart) {
+                    serverAnswerOpenTime = newStart;
+                    localAnswerReceiveTime = performance.now();
+                    hasSubmitted = false;
+                    lockUI(false);
+                    answerInput.value = "";
+                    setTimeout(() => answerInput.focus(), 50);
+                    resultStatus.style.display = "none";
+                    updateButtonStyles();
+                    startTimer(room.answer_duration);
+                }
+            } else {
+                lockUI(true);
+                if (answerInterval) clearInterval(answerInterval);
+                document.getElementById("answerCountdown").innerText = "--.--s";
+            }
+        }
+
+        function startTimer(duration) {
+            if (answerInterval) clearInterval(answerInterval);
+            if (duration <= 0) { document.getElementById("answerCountdown").innerText = "Vĩnh viễn"; return; }
+            const end = performance.now() + duration * 1000;
+            answerInterval = setInterval(() => {
+                let rem = (end - performance.now()) / 1000;
+                if (rem <= 0) {
+                    document.getElementById("answerCountdown").innerText = "0.000s";
+                    lockUI(true); // Khóa khi hết thời gian
+                    clearInterval(answerInterval);
+                } else {
+                    // BỎ ĐIỀU KIỆN hasSubmitted TẠI ĐÂY ĐỂ ĐỒNG HỒ LUÔN CHẠY
+                    document.getElementById("answerCountdown").innerText = rem.toFixed(3) + "s";
+                }
+            }, 30);
+        }
+
+        btnSend.onclick = async () => {
+            if (lockedAnswer || hasSubmitted || !answerInput.value) return;
+
+            const currentVal = answerInput.value;
+            const elapsed = (performance.now() - localAnswerReceiveTime) / 1000;
+            const finalISO = new Date(serverAnswerOpenTime + (elapsed * 1000)).toISOString();
+
+            const { error } = await supabase.from('answers').insert([{
+                room_code: myRoom, name: myName, answer_text: currentVal, created_at: finalISO
+            }]);
+
+            if (!error) {
+                hasSubmitted = true;
+                // Chỉ khóa input và nút bấm, không khóa biến lockedAnswer của timer
+                answerInput.disabled = true;
+                answerInput.classList.add("locked");
+                btnSend.classList.add("locked");
+                document.querySelectorAll('.fff-btn').forEach(b => b.classList.add("locked"));
+                
+                resultStatus.innerText = `ĐÃ GỬI: "${currentVal}" (${elapsed.toFixed(3)}s)`;
+                resultStatus.style.display = "block";
+                showPopup("Gửi thành công!");
+            } else {
+                showPopup("Lỗi: " + error.message);
+            }
+        };
+
+        document.getElementById("btnJoin").onclick = async () => {
+            const codeInput = document.getElementById("roomCode").value;
+            const code = parseInt(codeInput);
+            const name = document.getElementById("name").value.trim();
+            if (!code || !name) return showPopup("Thiếu thông tin");
+            
+            await supabase.from('participants').upsert([{
+                room_code: code, name, role: 'contestant', position: parseInt(document.getElementById("positionInput").value) || 0
+            }]);
+            
+            myRoom = code; myName = name;
+            document.getElementById("loginArea").style.display = "none";
+            document.getElementById("gameArea").style.display = "flex";
+
+            const { data } = await supabase.from('rooms').select('*').eq('room_code', code).single();
+            if (data) handleRoomUpdate(data);
+
+            supabase.channel(`room-${code}`).on('postgres_changes', {
+                event: 'UPDATE', schema: 'public', table: 'rooms', filter: `room_code=eq.${code}`
+            }, p => handleRoomUpdate(p.new)).subscribe();
+        };
+
+        document.getElementById("btnLeave").onclick = () => location.reload();
+    </script>
+</body>
+
+</html>
