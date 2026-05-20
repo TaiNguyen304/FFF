@@ -281,6 +281,7 @@
     <button id="btnJoinManager">Tham gia phòng (Quản lý)</button>
     <button id="btnListUsers">Danh sách tham gia</button>
     <button id="btnManualAdd">Bổ sung đáp án</button>
+    <button id="btnContestants" style="background: red; color: white;">Nhập danh sách thí sinh</button>
     <button id="btnExportResults">Xuất kết quả</button>
   </div>
   <br><br>
@@ -376,6 +377,21 @@
       <div class="popup-buttons">
         <button id="btnConfirmAdd" style="background: green; color: white;">Xác nhận</button>
         <button id="btnCloseAdd" style="background: red; color: white;">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="contestantsPopup" class="popup-overlay">
+    <div class="popup-content">
+      <h3>Nhập danh sách thí sinh</h3>
+      <div class="control-item" style="justify-content: center; margin-bottom: 15px;">
+        <label for="numContestants">Số thí sinh (tối đa 100):</label>
+        <input type="number" id="numContestants" value="1" min="1" max="100" style="width: 80px;">
+      </div>
+      <div id="contestantsContainer" style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;"></div>
+      <div class="popup-buttons">
+        <button id="btnSaveContestants" style="background: green; color: white; font-weight: bold;">Lưu</button>
+        <button id="btnCloseContestants" style="background: red; color: white; font-weight: bold;">Đóng</button>
       </div>
     </div>
   </div>
@@ -601,87 +617,87 @@
           .eq('room_code', currentRoom);
       };
       document.getElementById("btnExportResults").onclick = () => {
-  if (answers.length === 0) {
-    showPopup("Không có dữ liệu để xuất!", "error");
-    return;
-  }
+        if (answers.length === 0) {
+          showPopup("Không có dữ liệu để xuất!", "error");
+          return;
+        }
 
-  const wb = XLSX.utils.book_new();
-  const header = ["Tên", "Đáp án", "Thời gian (s)"];
-  const data = [header];
+        const wb = XLSX.utils.book_new();
+        const header = ["Tên", "Đáp án", "Thời gian (s)"];
+        const data = [header];
 
-  // Chỉ lấy đáp án CUỐI CÙNG của mỗi thí sinh
-  const latestAnswersMap = new Map();
-  answers.forEach(a => {
-    latestAnswersMap.set(a.name, a);
-  });
+        // Chỉ lấy đáp án CUỐI CÙNG của mỗi thí sinh
+        const latestAnswersMap = new Map();
+        answers.forEach(a => {
+          latestAnswersMap.set(a.name, a);
+        });
 
-  const finalExportData = Array.from(latestAnswersMap.values());
+        const finalExportData = Array.from(latestAnswersMap.values());
 
-  // (Tuỳ chọn) sắp xếp theo thời gian
-  finalExportData.sort(
-    (a, b) => new Date(a.created_at) - new Date(b.created_at)
-  );
+        // (Tuỳ chọn) sắp xếp theo thời gian
+        finalExportData.sort(
+          (a, b) => new Date(a.created_at) - new Date(b.created_at)
+        );
 
-  // Đổ dữ liệu
-  finalExportData.forEach(a => {
-    data.push([
-      a.name,
-      a.answer_text,
-      ((new Date(a.created_at).getTime() - answerStartTime) / 1000).toFixed(2)
-    ]);
-  });
+        // Đổ dữ liệu
+        finalExportData.forEach(a => {
+          data.push([
+            a.name,
+            a.answer_text,
+            ((new Date(a.created_at).getTime() - answerStartTime) / 1000).toFixed(2)
+          ]);
+        });
 
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  const range = XLSX.utils.decode_range(ws["!ref"]);
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const range = XLSX.utils.decode_range(ws["!ref"]);
 
-  // Style
-  for (let R = 0; R <= range.e.r; ++R) {
-    for (let C = 0; C <= range.e.c; ++C) {
-      const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
-      if (!ws[cellAddr]) continue;
+        // Style
+        for (let R = 0; R <= range.e.r; ++R) {
+          for (let C = 0; C <= range.e.c; ++C) {
+            const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[cellAddr]) continue;
 
-      if (!ws[cellAddr].s) ws[cellAddr].s = {};
+            if (!ws[cellAddr].s) ws[cellAddr].s = {};
 
-      /* ===== HEADER ===== */
-      if (R === 0) {
-        ws[cellAddr].s.font = {
-          bold: true,
-          color: { rgb: "000000" }
-        };
-        ws[cellAddr].s.fill = {
-          fgColor: { rgb: "FFFF00" } // vàng header
-        };
-        continue;
-      }
+            /* ===== HEADER ===== */
+            if (R === 0) {
+              ws[cellAddr].s.font = {
+                bold: true,
+                color: { rgb: "000000" }
+              };
+              ws[cellAddr].s.fill = {
+                fgColor: { rgb: "FFFF00" } // vàng header
+              };
+              continue;
+            }
 
-      /* ===== DATA ===== */
-      ws[cellAddr].s.font = { bold: true };
+            /* ===== DATA ===== */
+            ws[cellAddr].s.font = { bold: true };
 
-      const answerCellAddr = XLSX.utils.encode_cell({ r: R, c: 1 });
-      const cellValue = ws[answerCellAddr]
-        ? ws[answerCellAddr].v
-        : "";
+            const answerCellAddr = XLSX.utils.encode_cell({ r: R, c: 1 });
+            const cellValue = ws[answerCellAddr]
+              ? ws[answerCellAddr].v
+              : "";
 
-      if (
-        currentCorrectAnswer &&
-        String(cellValue).trim().toLowerCase() ===
-          currentCorrectAnswer.trim().toLowerCase()
-      ) {
-        ws[cellAddr].s.fill = {
-          fgColor: { rgb: "0000FF" } // xanh đáp án đúng
-        };
-        ws[cellAddr].s.font = {
-          bold: true,
-          color: { rgb: "FFFFFF" }
-        };
-      }
-    }
-  }
+            if (
+              currentCorrectAnswer &&
+              String(cellValue).trim().toLowerCase() ===
+              currentCorrectAnswer.trim().toLowerCase()
+            ) {
+              ws[cellAddr].s.fill = {
+                fgColor: { rgb: "0000FF" } // xanh đáp án đúng
+              };
+              ws[cellAddr].s.font = {
+                bold: true,
+                color: { rgb: "FFFFFF" }
+              };
+            }
+          }
+        }
 
-  XLSX.utils.book_append_sheet(wb, ws, "DapAn");
-  XLSX.writeFile(wb, `KetQua_FFF_${currentRoom}.xlsx`);
-};
+        XLSX.utils.book_append_sheet(wb, ws, "DapAn");
+        XLSX.writeFile(wb, `KetQua_FFF_${currentRoom}.xlsx`);
+      };
 
       document.getElementById("btnJoinManager").onclick = () => document.getElementById("joinPopup").style.display = "flex";
       document.getElementById("btnCloseJoin").onclick = () => document.getElementById("joinPopup").style.display = "none";
@@ -695,6 +711,65 @@
       };
       document.getElementById("btnCloseList").onclick = () => {
         document.getElementById("listPopup").style.display = "none";
+      };
+
+      // Contestant Management Popup
+      document.getElementById("btnContestants").onclick = () => {
+        document.getElementById("contestantsPopup").style.display = "flex";
+        generateContestantRows();
+      };
+
+      document.getElementById("btnCloseContestants").onclick = () => {
+        document.getElementById("contestantsPopup").style.display = "none";
+      };
+
+      document.getElementById("numContestants").addEventListener("input", generateContestantRows);
+
+      function generateContestantRows() {
+        const container = document.getElementById("contestantsContainer");
+        const numContestants = Math.min(parseInt(document.getElementById("numContestants").value) || 1, 100);
+        container.innerHTML = "";
+
+        for (let i = 1; i <= numContestants; i++) {
+          const row = document.createElement("div");
+          row.className = "add-row";
+          row.style.display = "flex";
+          row.style.gap = "5px";
+          row.style.marginBottom = "8px";
+          row.style.alignItems = "center";
+          row.innerHTML = `
+            <span style="width: 30px; font-weight: bold; color: #666;">${i}</span>
+            <input type="text" class="contestant-name" placeholder="Tên" style="flex: 1; padding: 8px;">
+            <input type="number" class="contestant-position" placeholder="Vị trí" min="1" max="100" style="width: 80px; padding: 8px;">
+          `;
+          container.appendChild(row);
+        }
+      }
+
+      document.getElementById("btnSaveContestants").onclick = () => {
+        if (!currentRoom) {
+          showPopup("Bạn cần tạo phòng trước!", "error");
+          return;
+        }
+
+        const rows = document.querySelectorAll("#contestantsContainer .add-row");
+        const contestants = [];
+        for (const row of rows) {
+          const name = row.querySelector(".contestant-name").value.trim();
+          const position = parseInt(row.querySelector(".contestant-position").value) || null;
+          if (name) {
+            contestants.push({ name, position });
+          }
+        }
+
+        if (contestants.length === 0) {
+          showPopup("Vui lòng nhập ít nhất 1 thí sinh!", "error");
+          return;
+        }
+
+        localStorage.setItem(`contestants_${currentRoom}`, JSON.stringify(contestants));
+        document.getElementById("contestantsPopup").style.display = "none";
+        showPopup("Đã lưu danh sách thí sinh!");
       };
 
       // Xử lý Popup Đáp án đúng

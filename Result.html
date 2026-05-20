@@ -49,12 +49,12 @@
             if (!roomCode) return;
             const { data } = await supabase
                 .from('participants')
-                .select('name, created_at, position') 
+                .select('name, created_at, position, role') 
                 .eq('room_code', roomCode)
                 .order('created_at', { ascending: true });
 
             if (data) {
-                allParticipants = data.filter(p => !p.name.startsWith("SYNC_TIME_"));
+                allParticipants = data.filter(p => !p.name.startsWith("SYNC_") && p.role === 'contestant');
             }
         }
 
@@ -89,11 +89,6 @@
         function render() {
             resultsContainer.innerHTML = '';
             
-            if (answers.length === 0) {
-                resultsContainer.innerHTML = '<p style="text-align:center"></p>';
-                return;
-            }
-
             const latestAnswersMap = new Map();
             answers.forEach(item => {
                 const existing = latestAnswersMap.get(item.name);
@@ -103,6 +98,19 @@
             });
 
             let displayData = Array.from(latestAnswersMap.values());
+
+            // Thêm những thí sinh không gửi đáp án
+            const answeredNames = new Set(displayData.map(item => item.name));
+            allParticipants.forEach(p => {
+                if (!answeredNames.has(p.name)) {
+                    displayData.push({
+                        name: p.name,
+                        answer_text: null,
+                        answer: null,
+                        created_at: null
+                    });
+                }
+            });
 
             const posMap = {};
             allParticipants.forEach(p => posMap[p.name] = p.position);
@@ -121,18 +129,23 @@
             });
 
             displayData.forEach(item => {
-                const submitTime = new Date(item.created_at).getTime();
-                let diff = 0;
-                if (roomStartTime && submitTime > roomStartTime) {
-                    diff = (submitTime - roomStartTime) / 1000;
-                }
-                const timeStr = (roomStartTime && diff > 0) ? diff.toFixed(2) : 'N/A';
-                const answerText = item.answer_text || item.answer || "";
-
                 const div = document.createElement('div');
                 div.className = 'result-row';
 
-                let content = `${item.name}|${answerText}|${timeStr}`;
+                let content;
+                if (item.created_at === null) {
+                    // Thí sinh không gửi đáp án
+                    content = `${item.name}||0.00`;
+                } else {
+                    const submitTime = new Date(item.created_at).getTime();
+                    let diff = 0;
+                    if (roomStartTime && submitTime > roomStartTime) {
+                        diff = (submitTime - roomStartTime) / 1000;
+                    }
+                    const timeStr = (roomStartTime && diff > 0) ? diff.toFixed(2) : 'N/A';
+                    const answerText = item.answer_text || item.answer || "";
+                    content = `${item.name}|${answerText}|${timeStr}`;
+                }
 
                 div.textContent = content;
                 resultsContainer.appendChild(div);

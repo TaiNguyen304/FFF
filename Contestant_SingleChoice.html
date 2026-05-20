@@ -33,6 +33,27 @@
             border: 1px solid #ccc;
         }
 
+        select {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        select option {
+            font-weight: bold;
+        }
+
+        select:disabled {
+            background-color: #f0f0f0;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
         button:hover,
         .fff-btn:hover:not(.locked) {
             background-color: orange !important;
@@ -139,8 +160,12 @@
     <div id="loginArea">
         <h1>FFF Thí sinh</h1>
         <input id="roomCode" placeholder="Mã phòng (6 số)">
-        <input id="name" placeholder="Tên của bạn">
-        <input id="positionInput" type="number" placeholder="Vị trí (1-100)">
+        <select id="name" placeholder="Chọn tên" disabled>
+            <option value="">-- Chọn tên --</option>
+        </select>
+        <select id="positionInput" disabled>
+            <option value="">-- Chọn vị trí --</option>
+        </select>
         <button id="btnJoin" style="background: purple; color: white;">Vào phòng</button>
     </div>
 
@@ -178,6 +203,48 @@
         const answerInput = document.getElementById("answer");
         const btnSend = document.getElementById("btnSend");
         const resultStatus = document.getElementById("resultStatus");
+        const roomCodeInput = document.getElementById("roomCode");
+        const nameSelect = document.getElementById("name");
+        const positionSelect = document.getElementById("positionInput");
+
+        function loadContestants() {
+            const roomCode = roomCodeInput.value.trim();
+            if (!roomCode) {
+                nameSelect.disabled = true;
+                positionSelect.disabled = true;
+                nameSelect.innerHTML = '<option value="">-- Chọn tên --</option>';
+                positionSelect.innerHTML = '<option value="">-- Chọn vị trí --</option>';
+                return;
+            }
+
+            const contestants = JSON.parse(localStorage.getItem(`contestants_${roomCode}`) || '[]');
+            nameSelect.innerHTML = '<option value="">-- Chọn tên --</option>';
+            positionSelect.innerHTML = '<option value="">-- Chọn vị trí --</option>';
+
+            if (contestants.length > 0) {
+                nameSelect.disabled = false;
+                contestants.forEach(c => {
+                    const option = document.createElement("option");
+                    option.value = c.name;
+                    option.textContent = c.name;
+                    nameSelect.appendChild(option);
+                });
+
+                positionSelect.disabled = false;
+                for (let i = 1; i <= 100; i++) {
+                    const option = document.createElement("option");
+                    option.value = i;
+                    option.textContent = i;
+                    positionSelect.appendChild(option);
+                }
+            } else {
+                showPopup("Danh sách thí sinh chưa được nhập cho phòng này");
+                nameSelect.disabled = true;
+                positionSelect.disabled = true;
+            }
+        }
+
+        roomCodeInput.addEventListener("input", loadContestants);
 
         function showPopup(msg) {
             const p = document.getElementById("popupMessage");
@@ -308,10 +375,14 @@
             const codeInput = document.getElementById("roomCode").value;
             const code = parseInt(codeInput);
             const name = document.getElementById("name").value.trim();
-            if (!code || !name) return showPopup("Thiếu thông tin");
+            const position = document.getElementById("positionInput").value.trim();
+            
+            if (!code || !name || !position) {
+                return showPopup("Vui lòng nhập đầy đủ mã phòng, tên và vị trí");
+            }
             
             await supabase.from('participants').upsert([{
-                room_code: code, name, role: 'contestant', position: parseInt(document.getElementById("positionInput").value) || 0
+                room_code: code, name, role: 'contestant', position: parseInt(position)
             }]);
             
             myRoom = code; myName = name;
