@@ -44,6 +44,7 @@
             border: 1px solid #ccc;
             background-color: white;
             cursor: pointer;
+            width: 200px;
         }
 
         select option {
@@ -193,11 +194,8 @@
     <div id="loginArea">
         <h1>FFF Thí sinh</h1>
         <input id="roomCode" placeholder="Mã phòng (6 số)">
-        <select id="name" placeholder="Chọn tên" disabled>
+        <select id="name" disabled>
             <option value="">-- Chọn tên --</option>
-        </select>
-        <select id="positionInput" disabled>
-            <option value="">-- Chọn vị trí --</option>
         </select>
         <button id="btnJoin" style="background: purple; color: white;">Vào phòng</button>
     </div>
@@ -239,43 +237,53 @@
         const resultStatus = document.getElementById("resultStatus");
         const roomCodeInput = document.getElementById("roomCode");
         const nameSelect = document.getElementById("name");
-        const positionSelect = document.getElementById("positionInput");
 
-        function loadContestants() {
-            const roomCode = roomCodeInput.value.trim();
-            if (!roomCode) {
+        // Hàm kiểm tra và tự động giữ focus cho ô đáp án khi đang mở câu hỏi
+        function keepFocusAnswer() {
+            if (!lockedAnswer && document.activeElement !== answerInput) {
+                answerInput.focus();
+            }
+        }
+
+        // Ép giữ focus liên tục bằng cách lắng nghe sự kiện mất tập trung (blur)
+        answerInput.addEventListener("blur", () => {
+            setTimeout(keepFocusAnswer, 10);
+        });
+
+        // Đảm bảo khi người dùng chuyển từ tab khác quay trở lại tab này thì lập tức focus lại
+        window.addEventListener("focus", keepFocusAnswer);
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") keepFocusAnswer();
+        });
+
+        async function loadContestants() {
+            const roomCode = parseInt(roomCodeInput.value.trim());
+            if (!roomCode || isNaN(roomCode)) {
                 nameSelect.disabled = true;
-                positionSelect.disabled = true;
                 nameSelect.innerHTML = '<option value="">-- Chọn tên --</option>';
-                positionSelect.innerHTML = '<option value="">-- Chọn vị trí --</option>';
                 return;
             }
 
-            const contestants = JSON.parse(localStorage.getItem(`contestants_${roomCode}`) || '[]');
+            const { data } = await supabase.from('participants').select('name').eq('room_code', roomCode);
             nameSelect.innerHTML = '<option value="">-- Chọn tên --</option>';
-            positionSelect.innerHTML = '<option value="">-- Chọn vị trí --</option>';
 
-            if (contestants.length > 0) {
-                nameSelect.disabled = false;
-                contestants.forEach(c => {
-                    const option = document.createElement("option");
-                    option.value = c.name;
-                    option.textContent = c.name;
-                    nameSelect.appendChild(option);
-                });
+            if (data && data.length > 0) {
+                const filteredNames = data
+                    .filter(p => p.name !== "Host" && !p.name.startsWith("SYNC_"))
+                    .map(p => p.name.trim());
 
-                positionSelect.disabled = false;
-                for (let i = 1; i <= 100; i++) {
-                    const option = document.createElement("option");
-                    option.value = i;
-                    option.textContent = i;
-                    positionSelect.appendChild(option);
-                }
-            } else {
-                showPopup("Danh sách thí sinh chưa được nhập cho phòng này");
-                nameSelect.disabled = true;
-                positionSelect.disabled = true;
-            }
+                const uniqueNames = [...new Set(filteredNames)];
+
+                if (uniqueNames.length > 0) {
+                    nameSelect.disabled = false;
+                    uniqueNames.forEach(cName => {
+                        const option = document.createElement("option");
+                        option.value = cName;
+                        option.textContent = cName;
+                        nameSelect.appendChild(option);
+                    });
+                } else { nameSelect.disabled = true; }
+            } else { nameSelect.disabled = true; }
         }
 
         roomCodeInput.addEventListener("input", loadContestants);
@@ -287,13 +295,10 @@
         }
 
         answerInput.addEventListener('keydown', function (e) {
-            if (e.key === "Enter") {
-                e.preventDefault();
-                btnSend.click();
-            }
+            if (e.key === "Enter") { e.preventDefault(); btnSend.click(); }
         });
 
-        answerInput.addEventListener('input', function (e) {
+        answerInput.addEventListener('input', function () {
             if (lockedAnswer) { this.value = ""; return; }
             let val = this.value.toUpperCase().replace(/[^ABCD]/g, '');
             let uniqueVal = "";
@@ -309,12 +314,14 @@
                 answerInput.value += char;
                 updateButtonStyles();
             }
+            keepFocusAnswer();
         }
 
         function pressReset() {
             if (lockedAnswer) return;
             answerInput.value = "";
             updateButtonStyles();
+            keepFocusAnswer();
         }
 
         function updateButtonStyles() {
@@ -327,7 +334,6 @@
         }
 
         async function handleRoomUpdate(room) {
-            // Kiểm tra Reset đáp án từ Host
             if (room.answer_reset_at && room.answer_reset_at !== lastResetAt) {
                 lastResetAt = room.answer_reset_at;
                 resultStatus.style.display = "none";
@@ -345,16 +351,12 @@
                     answerInput.classList.remove("locked");
                     answerInput.value = "";
                     answerInput.disabled = false;
-
-                    // THÊM DÒNG NÀY ĐỂ TỰ ĐỘNG FOCUS
-                    setTimeout(() => answerInput.focus(), 50);
-
+                    setTimeout(keepFocusAnswer, 50);
                     resultStatus.style.display = "none";
                     updateButtonStyles();
                     startTimer(room.answer_duration);
                 }
             } else {
-                // Khi Host không mở đáp án -> Giống như khi hết thời gian
                 lockedAnswer = true;
                 btnSend.classList.add("locked");
                 answerInput.classList.add("locked");
@@ -366,10 +368,7 @@
 
         function startTimer(duration) {
             if (answerInterval) clearInterval(answerInterval);
-            if (duration <= 0) {
-                document.getElementById("answerCountdown").innerText = "Vĩnh viễn";
-                return;
-            }
+            if (duration <= 0) { document.getElementById("answerCountdown").innerText = "Vĩnh viễn"; return; }
             const end = performance.now() + duration * 1000;
             answerInterval = setInterval(() => {
                 let rem = (end - performance.now()) / 1000;
@@ -380,9 +379,7 @@
                     answerInput.classList.add("locked");
                     answerInput.disabled = true;
                     clearInterval(answerInterval);
-                } else {
-                    document.getElementById("answerCountdown").innerText = rem.toFixed(3) + "s";
-                }
+                } else { document.getElementById("answerCountdown").innerText = rem.toFixed(3) + "s"; }
             }, 30);
         }
 
@@ -402,31 +399,26 @@
                 resultStatus.style.display = "block";
                 answerInput.value = "";
                 updateButtonStyles();
-                answerInput.focus();
+                keepFocusAnswer();
                 showPopup("Đã gửi: " + currentVal);
-            } else {
-                showPopup("Lỗi: " + error.message);
-            }
+            } else { showPopup("Lỗi: " + error.message); }
         };
 
         document.getElementById("btnJoin").onclick = async () => {
             const codeInput = document.getElementById("roomCode").value;
             const code = parseInt(codeInput);
             const name = document.getElementById("name").value.trim();
-            const position = document.getElementById("positionInput").value.trim();
-            
-            if (!code || !name || !position) {
-                return showPopup("Vui lòng nhập đầy đủ mã phòng, tên và vị trí");
-            }
-            
+
+            if (!code || !name) return showPopup("Vui lòng chọn đầy đủ mã phòng và tên thí sinh");
+
             await supabase.from('participants').upsert([{
-                room_code: code, name, role: 'contestant', position: parseInt(position)
+                room_code: code, name, role: 'contestant', position: 1
             }]);
+
             myRoom = code; myName = name;
             document.getElementById("loginArea").style.display = "none";
             document.getElementById("gameArea").style.display = "flex";
 
-            // Lấy trạng thái phòng ban đầu
             const { data } = await supabase.from('rooms').select('*').eq('room_code', code).single();
             if (data) handleRoomUpdate(data);
 
@@ -436,10 +428,7 @@
         };
 
         document.getElementById("btnLeave").onclick = () => location.reload();
-
-        document.addEventListener("contextmenu", function (e) {
-            e.preventDefault();
-        });
+        document.addEventListener("contextmenu", e => e.preventDefault());
     </script>
 </body>
 

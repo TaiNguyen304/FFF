@@ -47,9 +47,15 @@
       background: #fff;
     }
 
-    /* CSS cho hàng có đáp án đúng */
+    /* Các class tô màu theo luật mới */
     .correct-row td {
       background: blue !important;
+      color: white !important;
+      font-weight: bold !important;
+    }
+
+    .fastest-row td {
+      background: red !important;
       color: white !important;
       font-weight: bold !important;
     }
@@ -74,58 +80,16 @@
       padding: 0 15px;
     }
 
-    #btnCreate {
-      background: yellow;
-      color: black;
-    }
-
-    #btnJoinManager {
-      background: green;
-      color: white;
-    }
-
-    #btnListUsers {
-      background: blue;
-      color: white;
-    }
-
-    #btnExportResults {
-      background: purple;
-      color: white;
-    }
-
-    #btnManualAdd {
-      background: red;
-      color: white;
-    }
-
-    #unlockAnswersLimited {
-      background: purple;
-      color: white;
-    }
-
-    #unlockAnswersPermanent {
-      background: blue;
-      color: white;
-    }
-
-    #lockAnswers {
-      background: green;
-      color: white;
-    }
-
-    #resetAnswers {
-      background: yellow;
-      color: black;
-    }
-
-    /* Nút Nhập đáp án đúng */
-    #btnSetCorrect {
-      background: purple;
-      color: white;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
+    #btnCreate { background: yellow; color: black; }
+    #btnJoinManager { background: green; color: white; }
+    #btnListUsers { background: blue; color: white; }
+    #btnExportResults { background: purple; color: white; }
+    #btnManualAdd { background: red; color: white; }
+    #unlockAnswersLimited { background: purple; color: white; }
+    #unlockAnswersPermanent { background: blue; color: white; }
+    #lockAnswers { background: green; color: white; }
+    #resetAnswers { background: yellow; color: black; }
+    #btnSetCorrect { background: purple; color: white; font-weight: bold; margin-bottom: 10px; }
 
     button:hover {
       background: #ff00cc !important;
@@ -142,16 +106,8 @@
       font-size: 17px;
     }
 
-    .open {
-      background: green;
-      color: white;
-      box-shadow: 0 0 10px green;
-    }
-
-    .locked {
-      background: red;
-      color: white;
-    }
+    .open { background: green; color: white; box-shadow: 0 0 10px green; }
+    .locked { background: red; color: white; }
 
     #popupMessage {
       position: fixed;
@@ -170,10 +126,7 @@
       pointer-events: none;
     }
 
-    .error {
-      background-color: red;
-      color: white;
-    }
+    .error { background-color: red; color: white; }
 
     .control-group {
       margin-bottom: 15px;
@@ -183,23 +136,9 @@
       flex-wrap: wrap;
     }
 
-    .control-item {
-      display: flex;
-      align-items: center;
-    }
-
-    .control-item label {
-      font-weight: bold;
-      margin-right: 10px;
-    }
-
-    .time-elapsed-display {
-      font-size: 1.2em;
-      font-weight: bold !important;
-      margin-top: 10px;
-      height: 25px;
-      color: black;
-    }
+    .control-item { display: flex; align-items: center; }
+    .control-item label { font-weight: bold; margin-right: 10px; }
+    .time-elapsed-display { font-size: 1.2em; font-weight: bold !important; margin-top: 10px; height: 25px; color: black; }
 
     .popup-overlay {
       position: fixed;
@@ -226,48 +165,13 @@
       overflow-y: auto;
     }
 
-    .popup-content h3 {
-      margin-top: 0;
-    }
-
-    .add-row {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      margin-bottom: 5px;
-      justify-content: center;
-    }
-
-    .add-row input {
-      width: 120px;
-      font-weight: bold;
-      color: black;
-    }
-
-    #addRowsContainer {
-      margin-top: 10px;
-      border-top: 1px solid #ccc;
-      padding-top: 10px;
-    }
-
-    #userListContainer {
-      max-height: 400px;
-      overflow-y: auto;
-      text-align: left;
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin-top: 15px;
-    }
-
-    #userListContainer ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    #userListContainer li {
-      padding: 5px 0;
-      border-bottom: 1px dotted #eee;
-    }
+    .popup-content h3 { margin-top: 0; }
+    .add-row { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; justify-content: center; }
+    .add-row input { width: 150px; font-weight: bold; color: black; }
+    #addRowsContainer { margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px; }
+    #userListContainer { max-height: 400px; overflow-y: auto; text-align: left; border: 1px solid #ccc; padding: 10px; margin-top: 15px; }
+    #userListContainer ul { list-style: none; padding: 0; }
+    #userListContainer li { padding: 5px 0; border-bottom: 1px dotted #eee; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
@@ -309,12 +213,8 @@
 
   <h2>Bảng kết quả đáp án:</h2>
   <div style="margin-bottom: 10px; font-weight: bold; color: black; display: flex; justify-content: center; gap: 30px;">
-    <label style="cursor: pointer;"><input type="radio" name="sortOption" value="position" onchange="renderAnswers()">
-      Theo vị trí</label>
-    <label style="cursor: pointer;"><input type="radio" name="sortOption" value="join" onchange="renderAnswers()"> Theo
-      thứ tự vào phòng</label>
-    <label style="cursor: pointer;"><input type="radio" name="sortOption" value="time" checked
-        onchange="renderAnswers()"> Theo thời gian</label>
+    <label style="cursor: pointer;"><input type="radio" name="sortOption" value="join" onchange="renderAnswers()"> Theo thứ tự danh sách</label>
+    <label style="cursor: pointer;"><input type="radio" name="sortOption" value="time" checked onchange="renderAnswers()"> Theo thời gian</label>
   </div>
 
   <button id="btnSetCorrect">Nhập đáp án đúng</button>
@@ -322,8 +222,8 @@
   <table id="tblAnswers">
     <thead>
       <tr>
-        <th style="width: 30%;">Tên</th>
-        <th style="width: 50%;">Đáp án</th>
+        <th style="width: 40%;">Tên</th>
+        <th style="width: 40%;">Đáp án</th>
         <th style="width: 20%;">Thời gian</th>
       </tr>
     </thead>
@@ -383,14 +283,14 @@
 
   <div id="contestantsPopup" class="popup-overlay">
     <div class="popup-content">
-      <h3>Nhập danh sách thí sinh</h3>
+      <h3>Nhập danh sách thí sinh dự kiến</h3>
       <div class="control-item" style="justify-content: center; margin-bottom: 15px;">
-        <label for="numContestants">Số thí sinh (tối đa 100):</label>
+        <label for="numContestants">Số lượng thí sinh (tối đa 100):</label>
         <input type="number" id="numContestants" value="1" min="1" max="100" style="width: 80px;">
       </div>
       <div id="contestantsContainer" style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;"></div>
       <div class="popup-buttons">
-        <button id="btnSaveContestants" style="background: green; color: white; font-weight: bold;">Lưu</button>
+        <button id="btnSaveContestants" style="background: green; color: white; font-weight: bold;">Lưu & Đồng bộ Cloud</button>
         <button id="btnCloseContestants" style="background: red; color: white; font-weight: bold;">Đóng</button>
       </div>
     </div>
@@ -403,10 +303,9 @@
 
     let currentRoom = null, myName = "Host", myRole = "host";
     let answers = [], allParticipants = [];
-    let roomChannel = null, answersChannel = null, participantsChannel = null;
     let lockedAnswer = true, answerStartTime = 0, answerEndTime = 0, serverTimeOffset = 0, roomInfoData = null;
     let lastAnswerResetAt = null;
-    let currentCorrectAnswer = ""; // Biến lưu đáp án đúng
+    let currentCorrectAnswer = "";
 
     function showPopup(msg, type = "success") {
       const p = document.getElementById("popupMessage");
@@ -451,24 +350,87 @@
       const body = document.querySelector("#tblAnswers tbody");
       body.innerHTML = "";
       const sort = document.querySelector('input[name="sortOption"]:checked').value;
-      let data = [...new Map(answers.map(item => [item.name, item])).values()];
+      
+      // Lấy danh sách thí sinh dự kiến thực tế từ danh sách participants (role là contestant và bỏ SYNC_)
+      const expectedContestants = allParticipants.filter(p => p.role === 'contestant' && !p.name.startsWith("SYNC_"));
+      const uniqueExpectedNames = [...new Set(expectedContestants.map(c => c.name))];
 
-      if (sort === "time") data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      else if (sort === "position") {
-        const posMap = Object.fromEntries(allParticipants.map(p => [p.name, p.position]));
-        data.sort((a, b) => (posMap[a.name] || 999) - (posMap[b.name] || 999));
+      // Map đáp án mới nhất của từng người dựa trên mảng answers nhận từ server
+      const latestAnswersMap = new Map();
+      answers.forEach(item => {
+        latestAnswersMap.set(item.name, item);
+      });
+
+      // Tạo cấu trúc dữ liệu hiển thị gồm TẤT CẢ thí sinh
+      let finalRowsData = uniqueExpectedNames.map(cName => {
+        const hasAns = latestAnswersMap.get(cName);
+        if (hasAns) {
+          let originalTime = (new Date(hasAns.created_at).getTime() - answerStartTime) / 1000;
+          if (originalTime < 0) originalTime = 0;
+          
+          let displayTime = originalTime;
+          let isCorrect = false;
+
+          if (currentCorrectAnswer) {
+            isCorrect = (hasAns.answer_text.trim().toLowerCase() === currentCorrectAnswer.trim().toLowerCase());
+            if (!isCorrect) displayTime = 0; // Sai -> Ép về 0.00
+          }
+
+          return {
+            name: cName,
+            answer_text: hasAns.answer_text,
+            time: displayTime,
+            originalTime: originalTime,
+            isCorrect: isCorrect,
+            hasResponded: true
+          };
+        } else {
+          // Không trả lời hoặc chưa vào web
+          return {
+            name: cName,
+            answer_text: "",
+            time: 0,
+            originalTime: Infinity,
+            isCorrect: false,
+            hasResponded: false
+          };
+        }
+      });
+
+      // Xác định người trả lời đúng và nhanh nhất tuyệt đối
+      let fastestCorrectName = null;
+      if (currentCorrectAnswer) {
+        let correctAnswers = finalRowsData.filter(r => r.isCorrect && r.hasResponded);
+        if (correctAnswers.length > 0) {
+          correctAnswers.sort((a, b) => a.originalTime - b.originalTime);
+          fastestCorrectName = correctAnswers[0].name;
+        }
       }
-      data.forEach(item => {
-        const row = body.insertRow();
 
-        // Kiểm tra đáp án đúng để tô màu (Không phân biệt hoa thường, khoảng trắng)
-        if (currentCorrectAnswer && item.answer_text.trim().toLowerCase() === currentCorrectAnswer.trim().toLowerCase()) {
-          row.className = "correct-row";
+      // Sắp xếp bảng theo cấu hình radio button
+      if (sort === "time") {
+        finalRowsData.sort((a, b) => {
+          if (a.answer_text && !b.answer_text) return -1;
+          if (!a.answer_text && b.answer_text) return 1;
+          return a.originalTime - b.originalTime;
+        });
+      }
+
+      finalRowsData.forEach(item => {
+        const row = body.insertRow();
+        
+        // Gắn class CSS tô màu theo luật
+        if (currentCorrectAnswer && item.isCorrect) {
+          if (item.name === fastestCorrectName) {
+            row.className = "fastest-row"; // Đúng + Nhanh nhất -> Màu Đỏ
+          } else {
+            row.className = "correct-row"; // Đúng bình thường -> Màu Xanh
+          }
         }
 
         row.insertCell().innerText = item.name;
         row.insertCell().innerText = item.answer_text;
-        row.insertCell().innerText = ((new Date(item.created_at).getTime() - answerStartTime) / 1000).toFixed(2);
+        row.insertCell().innerText = item.time.toFixed(2);
       });
     }
 
@@ -492,37 +454,24 @@
           if (u.name?.startsWith("SYNC_")) return 4;
           return 3;
         };
-
         const pA = prio(a);
         const pB = prio(b);
         if (pA !== pB) return pA - pB;
-
-        if (pA === 3) {
-          const valA = (a.position !== null && a.position !== undefined && a.position !== "") ? a.position : "zzzz";
-          const valB = (b.position !== null && b.position !== undefined && b.position !== "") ? b.position : "zzzz";
-
-          if (!isNaN(valA) && !isNaN(valB)) {
-            if (Number(valA) !== Number(valB)) return Number(valA) - Number(valB);
-          } else if (valA !== valB) {
-            return valA.localeCompare(valB);
-          }
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-        }
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       });
 
       displayUsers.forEach(u => {
+        if (u.name?.startsWith("SYNC_")) return;
         const li = document.createElement("li");
-        const hasValidPos = u.position !== null && u.position !== undefined && String(u.position).trim() !== "";
-        const posDisplay = u.role === "contestant" && hasValidPos ? `[# ${u.position}] ` : "";
-
         if (u.role === "host") {
           li.innerHTML = `<b style="color: green;">${u.name}</b> <span style="color: green; font-weight:bold;">(Host)</span>`;
         } else if (u.role === "manager") {
           li.innerHTML = `<b style="color: blue;">${u.name}</b> <span style="color: blue; font-weight:bold;">(Quản lý)</span>`;
-        } else if (u.name?.startsWith("SYNC_")) {
-          li.innerHTML = `<b style="color: purple;">${u.name}</b> <span style="color: purple; font-weight:bold;">(System)</span>`;
         } else {
-          li.innerHTML = `<b style="color: red;">${posDisplay}${u.name}</b> <span style="color: red; font-weight:bold;">(Thí sinh)</span>`;
+          // Luật trạng thái đăng nhập: 
+          // Nếu position === 1 tức là thí sinh đã nhấn nút Vào Phòng, xóa chữ "đã sẵn sàng"
+          const statusText = u.position === 1 ? "" : " - đã sẵn sàng";
+          li.innerHTML = `<b style="color: red;">${u.name}</b> <span style="color: red; font-weight:bold;">(Thí sinh${statusText})</span>`;
         }
         ul.appendChild(li);
       });
@@ -554,19 +503,15 @@
     function handleRoomUpdate(room) {
       roomInfoData = room;
       answerStartTime = room.answer_open_time ? new Date(room.answer_open_time).getTime() : 0;
-
-      // CẬP NHẬT ĐÁP ÁN ĐÚNG TỪ DATABASE ĐỂ ĐỒNG BỘ GIỮA HOST/MANAGER
       currentCorrectAnswer = room.correct_answer || "";
       document.getElementById("correctAnswerInput").value = currentCorrectAnswer;
 
       if (room.answer_reset_at !== lastAnswerResetAt) {
         lastAnswerResetAt = room.answer_reset_at;
         answers = [];
-        renderAnswers();
       }
-
       updateUI();
-      renderAnswers(); // Vẽ lại để tô màu dựa trên đáp án đúng vừa nhận
+      renderAnswers();
     }
 
     function subscribeRealtime() {
@@ -584,16 +529,18 @@
       const { data } = await supabase.from('participants').select('*').eq('room_code', currentRoom);
       allParticipants = data || [];
       renderUserListPopup();
+      renderAnswers();
     }
 
     window.onload = () => {
       document.getElementById("btnCreate").onclick = async () => {
         const code = Math.floor(100000 + Math.random() * 900000);
-        await supabase.from('rooms').insert([{ room_code: code, answer_status: 'locked' }]);
+        await supabase.from('rooms').insert([{ room_code: code, answer_status: 'locked', correct_answer: "" }]);
         await supabase.from('participants').insert([{ room_code: code, name: "Host", role: "host" }]);
         currentRoom = code; document.getElementById("roomInfo").innerText = `Phòng: ${code} | Host`;
         syncServerTime(); subscribeRealtime(); fetchUsers();
       };
+
       document.getElementById("btnConfirmManager").onclick = async () => {
         const code = parseInt(document.getElementById("managerRoomCode").value);
         const name = document.getElementById("managerName").value.trim();
@@ -602,99 +549,91 @@
         document.getElementById("joinPopup").style.display = "none";
         syncServerTime(); subscribeRealtime(); fetchUsers();
       };
+
       document.getElementById("unlockAnswersLimited").onclick = () => updateRoomStatus('open', parseFloat(document.getElementById("answerDuration").value));
       document.getElementById("unlockAnswersPermanent").onclick = () => updateRoomStatus('open', 0);
       document.getElementById("lockAnswers").onclick = () => updateRoomStatus('locked', 0);
+      
+      // Khóa và reset toàn bộ bảng đáp án + xoá đáp án đúng ở database cùng lúc
       document.getElementById("resetAnswers").onclick = async () => {
+        currentCorrectAnswer = "";
+        document.getElementById("correctAnswerInput").value = "";
         await supabase.from('answers').delete().eq('room_code', currentRoom);
-        // Reset cả correct_answer về trống khi bấm Reset đáp án
-        await supabase.from('rooms')
-          .update({
-            answer_reset_at: new Date().toISOString(),
-            answer_status: 'locked',
-            correct_answer: ""
-          })
-          .eq('room_code', currentRoom);
+        await supabase.from('rooms').update({ 
+          answer_reset_at: new Date().toISOString(), 
+          answer_status: 'locked', 
+          correct_answer: "" 
+        }).eq('room_code', currentRoom);
+        showPopup("Đã reset đáp án câu cũ & xóa bộ nhớ đáp án đúng!");
       };
-      document.getElementById("btnExportResults").onclick = () => {
-        if (answers.length === 0) {
-          showPopup("Không có dữ liệu để xuất!", "error");
-          return;
-        }
 
+      document.getElementById("btnExportResults").onclick = () => {
+        if (answers.length === 0) { showPopup("Không có dữ liệu để xuất!", "error"); return; }
         const wb = XLSX.utils.book_new();
         const header = ["Tên", "Đáp án", "Thời gian (s)"];
         const data = [header];
 
-        // Chỉ lấy đáp án CUỐI CÙNG của mỗi thí sinh
+        const expectedContestants = allParticipants.filter(p => p.role === 'contestant' && !p.name.startsWith("SYNC_"));
+        const uniqueExpectedNames = [...new Set(expectedContestants.map(c => c.name))];
         const latestAnswersMap = new Map();
-        answers.forEach(a => {
-          latestAnswersMap.set(a.name, a);
+        answers.forEach(a => { latestAnswersMap.set(a.name, a); });
+
+        let processedRows = uniqueExpectedNames.map(cName => {
+          const hasAns = latestAnswersMap.get(cName);
+          if (hasAns) {
+            let origTime = (new Date(hasAns.created_at).getTime() - answerStartTime) / 1000;
+            if (origTime < 0) origTime = 0;
+            let displayTime = origTime;
+            let isCorrect = false;
+            if (currentCorrectAnswer) {
+              isCorrect = (hasAns.answer_text.trim().toLowerCase() === currentCorrectAnswer.trim().toLowerCase());
+              if (!isCorrect) displayTime = 0;
+            }
+            return { name: cName, answer: hasAns.answer_text, time: displayTime, originalTime: origTime, isCorrect: isCorrect };
+          } else {
+            return { name: cName, answer: "", time: 0, originalTime: Infinity, isCorrect: false };
+          }
         });
 
-        const finalExportData = Array.from(latestAnswersMap.values());
+        let fastestCorrectName = null;
+        if (currentCorrectAnswer) {
+          let correctAnswers = processedRows.filter(r => r.isCorrect && r.answer);
+          if (correctAnswers.length > 0) {
+            correctAnswers.sort((a, b) => a.originalTime - b.originalTime);
+            fastestCorrectName = correctAnswers[0].name;
+          }
+        }
 
-        // (Tuỳ chọn) sắp xếp theo thời gian
-        finalExportData.sort(
-          (a, b) => new Date(a.created_at) - new Date(b.created_at)
-        );
-
-        // Đổ dữ liệu
-        finalExportData.forEach(a => {
-          data.push([
-            a.name,
-            a.answer_text,
-            ((new Date(a.created_at).getTime() - answerStartTime) / 1000).toFixed(2)
-          ]);
+        processedRows.forEach(r => {
+          data.push([r.name, r.answer, r.time.toFixed(2)]);
         });
 
         const ws = XLSX.utils.aoa_to_sheet(data);
         const range = XLSX.utils.decode_range(ws["!ref"]);
 
-        // Style
-        for (let R = 0; R <= range.e.r; ++R) {
+        for (let R = 1; R <= range.e.r; ++R) {
+          const cellNameAddr = XLSX.utils.encode_cell({ r: R, c: 0 });
+          if(!ws[cellNameAddr]) continue;
+          const currentName = ws[cellNameAddr].v;
+          const matchData = processedRows.find(item => item.name === currentName);
+
           for (let C = 0; C <= range.e.c; ++C) {
             const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
             if (!ws[cellAddr]) continue;
-
             if (!ws[cellAddr].s) ws[cellAddr].s = {};
-
-            /* ===== HEADER ===== */
-            if (R === 0) {
-              ws[cellAddr].s.font = {
-                bold: true,
-                color: { rgb: "000000" }
-              };
-              ws[cellAddr].s.fill = {
-                fgColor: { rgb: "FFFF00" } // vàng header
-              };
-              continue;
-            }
-
-            /* ===== DATA ===== */
             ws[cellAddr].s.font = { bold: true };
 
-            const answerCellAddr = XLSX.utils.encode_cell({ r: R, c: 1 });
-            const cellValue = ws[answerCellAddr]
-              ? ws[answerCellAddr].v
-              : "";
-
-            if (
-              currentCorrectAnswer &&
-              String(cellValue).trim().toLowerCase() ===
-              currentCorrectAnswer.trim().toLowerCase()
-            ) {
-              ws[cellAddr].s.fill = {
-                fgColor: { rgb: "0000FF" } // xanh đáp án đúng
-              };
-              ws[cellAddr].s.font = {
-                bold: true,
-                color: { rgb: "FFFFFF" }
-              };
+            if (matchData && matchData.isCorrect) {
+              if (matchData.name === fastestCorrectName) {
+                ws[cellAddr].s.fill = { fgColor: { rgb: "FF0000" } };
+                ws[cellAddr].s.font = { bold: true, color: { rgb: "FFFFFF" } };
+              } else {
+                ws[cellAddr].s.fill = { fgColor: { rgb: "0000FF" } };
+                ws[cellAddr].s.font = { bold: true, color: { rgb: "FFFFFF" } };
+              }
             }
           }
         }
-
         XLSX.utils.book_append_sheet(wb, ws, "DapAn");
         XLSX.writeFile(wb, `KetQua_FFF_${currentRoom}.xlsx`);
       };
@@ -704,111 +643,72 @@
       document.getElementById("btnManualAdd").onclick = () => { generateAddRows(); document.getElementById("addPopup").style.display = "flex"; };
       document.getElementById("btnCloseAdd").onclick = () => document.getElementById("addPopup").style.display = "none";
       document.getElementById("btnConfirmAdd").onclick = handleConfirmAdd;
+      document.getElementById("btnListUsers").onclick = () => { document.getElementById("listPopup").style.display = "flex"; renderUserListPopup(); };
+      document.getElementById("btnCloseList").onclick = () => { document.getElementById("listPopup").style.display = "none"; };
 
-      document.getElementById("btnListUsers").onclick = () => {
-        document.getElementById("listPopup").style.display = "flex";
-        renderUserListPopup();
-      };
-      document.getElementById("btnCloseList").onclick = () => {
-        document.getElementById("listPopup").style.display = "none";
-      };
-
-      // Contestant Management Popup
       document.getElementById("btnContestants").onclick = () => {
         document.getElementById("contestantsPopup").style.display = "flex";
         generateContestantRows();
       };
-
-      document.getElementById("btnCloseContestants").onclick = () => {
-        document.getElementById("contestantsPopup").style.display = "none";
-      };
-
+      document.getElementById("btnCloseContestants").onclick = () => { document.getElementById("contestantsPopup").style.display = "none"; };
       document.getElementById("numContestants").addEventListener("input", generateContestantRows);
 
       function generateContestantRows() {
         const container = document.getElementById("contestantsContainer");
         const numContestants = Math.min(parseInt(document.getElementById("numContestants").value) || 1, 100);
         container.innerHTML = "";
-
         for (let i = 1; i <= numContestants; i++) {
           const row = document.createElement("div");
           row.className = "add-row";
-          row.style.display = "flex";
-          row.style.gap = "5px";
-          row.style.marginBottom = "8px";
-          row.style.alignItems = "center";
           row.innerHTML = `
-            <span style="width: 30px; font-weight: bold; color: #666;">${i}</span>
-            <input type="text" class="contestant-name" placeholder="Tên" style="flex: 1; padding: 8px;">
-            <input type="number" class="contestant-position" placeholder="Vị trí" min="1" max="100" style="width: 80px; padding: 8px;">
+            <span style="width: 40px; font-weight: bold; color: #666;">${i}</span>
+            <input type="text" class="contestant-name" placeholder="Nhập tên thí sinh..." style="flex: 1; padding: 8px;">
           `;
           container.appendChild(row);
         }
       }
 
-      document.getElementById("btnSaveContestants").onclick = () => {
-        if (!currentRoom) {
-          showPopup("Bạn cần tạo phòng trước!", "error");
-          return;
-        }
-
+      document.getElementById("btnSaveContestants").onclick = async () => {
+        if (!currentRoom) { showPopup("Bạn cần tạo phòng trước!", "error"); return; }
         const rows = document.querySelectorAll("#contestantsContainer .add-row");
-        const contestants = [];
+        const inserts = [];
+        
         for (const row of rows) {
           const name = row.querySelector(".contestant-name").value.trim();
-          const position = parseInt(row.querySelector(".contestant-position").value) || null;
           if (name) {
-            contestants.push({ name, position });
+            inserts.push({ room_code: currentRoom, name, role: 'contestant', position: 999 });
           }
         }
 
-        if (contestants.length === 0) {
-          showPopup("Vui lòng nhập ít nhất 1 thí sinh!", "error");
-          return;
-        }
+        if (inserts.length === 0) { showPopup("Vui lòng nhập ít nhất 1 thí sinh!", "error"); return; }
 
-        localStorage.setItem(`contestants_${currentRoom}`, JSON.stringify(contestants));
-        document.getElementById("contestantsPopup").style.display = "none";
-        showPopup("Đã lưu danh sách thí sinh!");
+        const { error } = await supabase.from('participants').insert(inserts);
+        if(!error) {
+          document.getElementById("contestantsPopup").style.display = "none";
+          showPopup("Đã đồng bộ danh sách thí sinh lên Cloud!");
+          fetchUsers();
+        } else {
+          showPopup("Lỗi lưu trữ Cloud: " + error.message, "error");
+        }
       };
 
-      // Xử lý Popup Đáp án đúng
       const btnSetCorrect = document.getElementById("btnSetCorrect");
       const correctPopup = document.getElementById("correctPopup");
       const btnSaveCorrect = document.getElementById("btnSaveCorrect");
       const btnCloseCorrect = document.getElementById("btnCloseCorrect");
       const correctAnswerInput = document.getElementById("correctAnswerInput");
 
-      btnSetCorrect.onclick = () => {
-        correctPopup.style.display = "flex";
-        correctAnswerInput.focus();
-      };
-
-      btnCloseCorrect.onclick = () => {
-        correctPopup.style.display = "none";
-      };
-
+      btnSetCorrect.onclick = () => { correctPopup.style.display = "flex"; correctAnswerInput.focus(); };
+      btnCloseCorrect.onclick = () => { correctPopup.style.display = "none"; };
       btnSaveCorrect.onclick = async () => {
         const val = correctAnswerInput.value.trim();
-
-        // Lưu vào database thay vì chỉ lưu biến cục bộ
-        const { error } = await supabase
-          .from('rooms')
-          .update({ correct_answer: val })
-          .eq('room_code', currentRoom);
-
-        if (!error) {
-          correctPopup.style.display = "none";
-          showPopup("Đã cập nhật đáp án đúng cho toàn phòng!");
-        } else {
-          showPopup("Lỗi đồng bộ: " + error.message, "error");
-        }
+        const { error } = await supabase.from('rooms').update({ correct_answer: val }).eq('room_code', currentRoom);
+        if (!error) { correctPopup.style.display = "none"; showPopup("Đã cập nhật đáp án đúng!"); }
+        else { showPopup("Lỗi đồng bộ: " + error.message, "error"); }
       };
     };
 
-    document.addEventListener("contextmenu", function (e) {
-      e.preventDefault();
-    });
+    document.addEventListener("contextmenu", e => e.preventDefault());
   </script>
 </body>
 
