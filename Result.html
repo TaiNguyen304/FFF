@@ -39,7 +39,6 @@
         const params = new URLSearchParams(window.location.search);
         const roomCode = params.get('roomid');
         const resultsContainer = document.getElementById('resultsContainer');
-        // Đã xóa khai báo roomStatus tại đây
 
         let answers = [];
         let roomStartTime = null;
@@ -54,17 +53,28 @@
                 .order('created_at', { ascending: true });
 
             if (data) {
-                allParticipants = data.filter(p => !p.name.startsWith("SYNC_") && p.role === 'contestant');
+                // Lọc bỏ Host, SYNC_ và dùng Map để loại bỏ trùng lặp tên thí sinh (giữ lại bản ghi đầu tiên hợp lệ)
+                const uniqueParticipantsMap = new Map();
+                data.forEach(p => {
+                    if (p.name !== "Host" && !p.name.startsWith("SYNC_") && p.role === 'contestant') {
+                        const trimmedName = p.name.trim();
+                        if (!uniqueParticipantsMap.has(trimmedName)) {
+                            uniqueParticipantsMap.set(trimmedName, {
+                                name: trimmedName,
+                                created_at: p.created_at,
+                                position: p.position,
+                                role: p.role
+                            });
+                        }
+                    }
+                });
+                allParticipants = Array.from(uniqueParticipantsMap.values());
             }
         }
 
         async function fetchRoomInfo() {
             if (!roomCode) return;
             const { data: room, error } = await supabase.from('rooms').select('answer_open_time').eq('room_code', roomCode).single();
-            if (error) {
-                console.error("Lỗi lấy thông tin phòng:", error.message);
-                return;
-            }
             if (room) {
                 roomStartTime = room.answer_open_time ? new Date(room.answer_open_time).getTime() : 0;
             }
@@ -76,11 +86,6 @@
                 .from('answers')
                 .select('*')
                 .eq('room_code', roomCode);
-
-            if (error) {
-                console.error("Lỗi lấy đáp án:", error.message);
-                return;
-            }
             
             answers = data || [];
             render();
@@ -91,16 +96,18 @@
             
             const latestAnswersMap = new Map();
             answers.forEach(item => {
-                const existing = latestAnswersMap.get(item.name);
+                const trimmedName = item.name ? item.name.trim() : "";
+                if (!trimmedName) return;
+                const existing = latestAnswersMap.get(trimmedName);
                 if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
-                    latestAnswersMap.set(item.name, item);
+                    latestAnswersMap.set(trimmedName, item);
                 }
             });
 
             let displayData = Array.from(latestAnswersMap.values());
 
-            // Thêm những thí sinh không gửi đáp án
-            const answeredNames = new Set(displayData.map(item => item.name));
+            // Thêm những thí sinh có trong phòng (bảng participants) nhưng không gửi đáp án/chưa vào trang web
+            const answeredNames = new Set(displayData.map(item => item.name.trim()));
             allParticipants.forEach(p => {
                 if (!answeredNames.has(p.name)) {
                     displayData.push({
@@ -134,7 +141,7 @@
 
                 let content;
                 if (item.created_at === null) {
-                    // Thí sinh không gửi đáp án
+                    // Thí sinh chưa vào web hoặc không gửi đáp án
                     content = `${item.name}||0.00`;
                 } else {
                     const submitTime = new Date(item.created_at).getTime();
@@ -155,10 +162,8 @@
         async function init() {
             if (!roomCode) {
                 resultsContainer.innerHTML = "Thiếu <b>?roomid=XXXXXX</b> trên URL";
-                
                 return;
             }
-            // Đã xóa dòng roomStatus.innerText hiển thị mã phòng
 
             await fetchRoomInfo();
             await fetchParticipants();
