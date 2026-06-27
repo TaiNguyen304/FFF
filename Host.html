@@ -439,19 +439,36 @@
       if (!ul) return;
       ul.innerHTML = "";
 
+      // Bước 1: Đếm số lần xuất hiện của từng tên thí sinh trong bảng participants
+      const nameCounts = {};
+      allParticipants.forEach(u => {
+        if (u.role === "contestant" && !u.name?.startsWith("SYNC_")) {
+          nameCounts[u.name] = (nameCounts[u.name] || 0) + 1;
+        }
+      });
+
+      // Bước 2: Lọc trùng danh sách để hiển thị duy nhất 1 tên
       const uniqueParticipantsMap = new Map();
       allParticipants.forEach(u => {
+        if (u.name?.startsWith("SYNC_")) return;
+        
         if (!uniqueParticipantsMap.has(u.name)) {
           uniqueParticipantsMap.set(u.name, u);
+        } else {
+          // Nếu trùng tên, ưu tiên giữ lại bản ghi có thời gian tạo mới hơn (bản ghi vào phòng thực tế)
+          const existing = uniqueParticipantsMap.get(u.name);
+          if (new Date(u.created_at) > new Date(existing.created_at)) {
+            uniqueParticipantsMap.set(u.name, u);
+          }
         }
       });
       let displayUsers = Array.from(uniqueParticipantsMap.values());
 
+      // Bước 3: Sắp xếp thứ tự hiển thị chức vụ: Host -> Quản lý -> Thí sinh
       displayUsers.sort((a, b) => {
         const prio = u => {
           if (u.role === "host") return 1;
           if (u.role === "manager") return 2;
-          if (u.name?.startsWith("SYNC_")) return 4;
           return 3;
         };
         const pA = prio(a);
@@ -460,17 +477,21 @@
         return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       });
 
+      // Bước 4: Tiến hành vẽ giao diện HTML dựa trên số lần đếm bản ghi
       displayUsers.forEach(u => {
-        if (u.name?.startsWith("SYNC_")) return;
         const li = document.createElement("li");
+        
         if (u.role === "host") {
           li.innerHTML = `<b style="color: green;">${u.name}</b> <span style="color: green; font-weight:bold;">(Host)</span>`;
         } else if (u.role === "manager") {
           li.innerHTML = `<b style="color: blue;">${u.name}</b> <span style="color: blue; font-weight:bold;">(Quản lý)</span>`;
         } else {
-          // Luật trạng thái đăng nhập: 
-          // Nếu position === 1 tức là thí sinh đã nhấn nút Vào Phòng, xóa chữ "đã sẵn sàng"
-          const statusText = u.position === 1 ? "" : " - đã sẵn sàng";
+          // LOGIC KHÔNG POSITION:
+          // Nếu tên thí sinh này xuất hiện từ 2 lần trở lên trong database, 
+          // chứng tỏ ngoài danh sách dự kiến ban đầu, họ đã bấm "Vào phòng" thêm 1 lần nữa.
+          const hasJoined = nameCounts[u.name] > 1;
+          
+          const statusText = hasJoined ? "" : " - đã sẵn sàng";
           li.innerHTML = `<b style="color: red;">${u.name}</b> <span style="color: red; font-weight:bold;">(Thí sinh${statusText})</span>`;
         }
         ul.appendChild(li);
