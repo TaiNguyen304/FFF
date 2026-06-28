@@ -568,7 +568,15 @@
         await supabase.from('participants').insert([{ room_code: code, name, role: "manager" }]);
         currentRoom = code; document.getElementById("roomInfo").innerText = `Phòng: ${code} | Quản lý`;
         document.getElementById("joinPopup").style.display = "none";
-        syncServerTime(); subscribeRealtime(); fetchUsers();
+        
+        // Tự động tải lại và đồng bộ cập nhật trạng thái phòng hiện tại cho Manager vào muộn
+        const { data: roomData, error: roomError } = await supabase.from('rooms').select('*').eq('room_code', code).single();
+        if (!roomError && roomData) {
+          roomInfoData = roomData;
+        }
+        await syncServerTime(); 
+        subscribeRealtime(); 
+        await fetchUsers();
       };
 
       document.getElementById("unlockAnswersLimited").onclick = () => updateRoomStatus('open', parseFloat(document.getElementById("answerDuration").value));
