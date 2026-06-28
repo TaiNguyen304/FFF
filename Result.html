@@ -82,7 +82,7 @@
             if (!roomCode) return;
             const { data } = await supabase
                 .from('participants')
-                .select('name, created_at, position, role') 
+                .select('name, created_at, position, role')
                 .eq('room_code', roomCode)
                 .order('created_at', { ascending: true });
 
@@ -122,19 +122,19 @@
                 .from('answers')
                 .select('*')
                 .eq('room_code', roomCode);
-            
+
             answers = data || [];
             render();
         }
 
         function render() {
             resultsContainer.innerHTML = '';
-            
+
             const latestAnswersMap = new Map();
             answers.forEach(item => {
                 const trimmedName = item.name ? item.name.trim() : "";
                 if (!trimmedName) return;
-                
+
                 // Kiểm tra đồng bộ chéo: nếu một cái tên trong bảng answers vô tình trùng với bộ lọc loại trừ, ta cũng bỏ qua
                 const lowerName = trimmedName.toLowerCase();
                 if (lowerName === "host" || lowerName.includes("quản lý") || lowerName.includes("quan ly") || lowerName === "system") return;
@@ -160,7 +160,8 @@
             });
 
             // Sắp xếp danh sách theo Tên thí sinh (A-Z)
-            displayData.sort((a, b) => a.name.localeCompare(b.name, 'vi', { sensitivity: 'base' }));
+            // Sắp xếp danh sách theo Tên thí sinh (A-Z) kèm theo xử lý số chính xác
+            displayData.sort((a, b) => a.name.localeCompare(b.name, 'vi', { sensitivity: 'base', numeric: true }));
 
             // Tạo cụm 1: Tên|Đáp án
             const answerSection = document.createElement('div');
@@ -180,7 +181,7 @@
 
             displayData.forEach(item => {
                 const answerText = (item.answer_text || item.answer || "").toString().trim().toUpperCase();
-                
+
                 // Logic xác định xem thí sinh có làm đúng hay không
                 let isCorrect = false;
                 if (roomCorrectAnswer && answerText) {
@@ -195,7 +196,7 @@
                     if (roomStartTime && submitTime > roomStartTime) {
                         diff = (submitTime - roomStartTime) / 1000;
                     }
-                    
+
                     // Nếu có thời gian nộp hợp lệ, tiến hành kiểm tra điều kiện đáp án
                     if (roomStartTime && diff > 0) {
                         // SỬA LỖI TẠI ĐÂY: Nếu làm đúng thì lấy số giây thực tế, nếu làm sai quy đổi thẳng về 0.00
@@ -234,8 +235,8 @@
 
             supabase.channel('answers_channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'answers', filter: `room_code=eq.${roomCode}` },
-                    () => { 
-                        fetchAndRender(); 
+                    () => {
+                        fetchAndRender();
                     })
                 .subscribe();
 
@@ -246,15 +247,15 @@
                         if ('answer_open_time' in payload.new || 'correct_answer' in payload.new) {
                             roomStartTime = payload.new.answer_open_time ? new Date(payload.new.answer_open_time).getTime() : 0;
                             roomCorrectAnswer = payload.new.correct_answer ? payload.new.correct_answer.toString().trim().toUpperCase() : null;
-                            fetchAndRender(); 
+                            fetchAndRender();
                         }
                     })
                 .subscribe();
 
             supabase.channel('participants_channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'participants', filter: `room_code=eq.${roomCode}` },
-                    () => { 
-                        fetchParticipants().then(render); 
+                    () => {
+                        fetchParticipants().then(render);
                     })
                 .subscribe();
         }
