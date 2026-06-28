@@ -14,9 +14,28 @@
 
         #resultsContainer {
             border: 1px solid #ccc;
-            padding: 10px;
+            padding: 15px;
             background: #fff;
             min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .result-section {
+            border: 1px solid #aaa;
+            padding: 15px;
+            border-radius: 6px;
+            background-color: #fafafa;
+        }
+
+        .section-title {
+            font-size: 1.4em;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 5px;
         }
 
         .result-row {
@@ -42,7 +61,22 @@
 
         let answers = [];
         let roomStartTime = null;
+        let roomCorrectAnswer = null; // Biến lưu trữ đáp án đúng của phòng
         let allParticipants = [];
+
+        // Hàm hỗ trợ kiểm tra xem một giá trị role/name có thuộc nhóm quản lý không
+        function isContestantRole(roleStr, nameStr) {
+            const r = roleStr ? roleStr.toString().trim().toLowerCase() : "";
+            const n = nameStr ? nameStr.toString().trim().toLowerCase() : "";
+
+            // Nếu tên chứa các từ khóa Host, Quản lý, System thì loại bỏ ngay
+            if (n === "host" || n.includes("quản lý") || n.includes("quan ly") || n === "system" || n.startsWith("sync_")) {
+                return false;
+            }
+
+            // Chỉ chấp nhận các tài khoản có role là contestant hoặc thí sinh
+            return r === "contestant" || r === "thí sinh" || r === "thisinh";
+        }
 
         async function fetchParticipants() {
             if (!roomCode) return;
@@ -53,10 +87,10 @@
                 .order('created_at', { ascending: true });
 
             if (data) {
-                // Lọc bỏ Host, SYNC_ và dùng Map để loại bỏ trùng lặp tên thí sinh (giữ lại bản ghi đầu tiên hợp lệ)
                 const uniqueParticipantsMap = new Map();
                 data.forEach(p => {
-                    if (p.name !== "Host" && !p.name.startsWith("SYNC_") && p.role === 'contestant') {
+                    // Áp dụng bộ lọc chuẩn hóa chữ thường để lọc chính xác thí sinh
+                    if (isContestantRole(p.role, p.name)) {
                         const trimmedName = p.name.trim();
                         if (!uniqueParticipantsMap.has(trimmedName)) {
                             uniqueParticipantsMap.set(trimmedName, {
@@ -74,9 +108,11 @@
 
         async function fetchRoomInfo() {
             if (!roomCode) return;
-            const { data: room, error } = await supabase.from('rooms').select('answer_open_time').eq('room_code', roomCode).single();
+            // Lấy thêm trường correct_answer để kiểm tra tính đúng/sai của câu trả lời
+            const { data: room, error } = await supabase.from('rooms').select('answer_open_time, correct_answer').eq('room_code', roomCode).single();
             if (room) {
                 roomStartTime = room.answer_open_time ? new Date(room.answer_open_time).getTime() : 0;
+                roomCorrectAnswer = room.correct_answer ? room.correct_answer.toString().trim().toUpperCase() : null;
             }
         }
 
@@ -98,6 +134,11 @@
             answers.forEach(item => {
                 const trimmedName = item.name ? item.name.trim() : "";
                 if (!trimmedName) return;
+                
+                // Kiểm tra đồng bộ chéo: nếu một cái tên trong bảng answers vô tình trùng với bộ lọc loại trừ, ta cũng bỏ qua
+                const lowerName = trimmedName.toLowerCase();
+                if (lowerName === "host" || lowerName.includes("quản lý") || lowerName.includes("quan ly") || lowerName === "system") return;
+
                 const existing = latestAnswersMap.get(trimmedName);
                 if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
                     latestAnswersMap.set(trimmedName, item);
@@ -106,7 +147,6 @@
 
             let displayData = Array.from(latestAnswersMap.values());
 
-            // Thêm những thí sinh có trong phòng (bảng participants) nhưng không gửi đáp án/chưa vào trang web
             const answeredNames = new Set(displayData.map(item => item.name.trim()));
             allParticipants.forEach(p => {
                 if (!answeredNames.has(p.name)) {
@@ -119,44 +159,67 @@
                 }
             });
 
-            const posMap = {};
-            allParticipants.forEach(p => posMap[p.name] = p.position);
+            // Sắp xếp danh sách theo Tên thí sinh (A-Z)
+            displayData.sort((a, b) => a.name.localeCompare(b.name, 'vi', { sensitivity: 'base' }));
 
-            displayData.sort((a, b) => {
-                const posA = posMap[a.name];
-                const posB = posMap[b.name];
+            // Tạo cụm 1: Tên|Đáp án
+            const answerSection = document.createElement('div');
+            answerSection.className = 'result-section';
+            const answerTitle = document.createElement('div');
+            answerTitle.className = 'section-title';
+            answerTitle.textContent = '';
+            answerSection.appendChild(answerTitle);
 
-                if (posA != null && posB != null) return posA - posB;
-                if (posA != null && posB == null) return -1;
-                if (posA == null && posB != null) return 1;
-
-                const idxA = allParticipants.findIndex(p => p.name === a.name);
-                const idxB = allParticipants.findIndex(p => p.name === b.name);
-                return idxA - idxB;
-            });
+            // Tạo cụm 2: Tên|Thời gian
+            const timeSection = document.createElement('div');
+            timeSection.className = 'result-section';
+            const timeTitle = document.createElement('div');
+            timeTitle.className = 'section-title';
+            timeTitle.textContent = '';
+            timeSection.appendChild(timeTitle);
 
             displayData.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'result-row';
+                const answerText = (item.answer_text || item.answer || "").toString().trim().toUpperCase();
+                
+                // Logic xác định xem thí sinh có làm đúng hay không
+                let isCorrect = false;
+                if (roomCorrectAnswer && answerText) {
+                    isCorrect = (answerText === roomCorrectAnswer);
+                }
 
-                let content;
-                if (item.created_at === null) {
-                    // Thí sinh chưa vào web hoặc không gửi đáp án
-                    content = `${item.name}||0.00`;
-                } else {
+                // Tính toán thời gian ban đầu
+                let timeStr = '0.00';
+                if (item.created_at !== null) {
                     const submitTime = new Date(item.created_at).getTime();
                     let diff = 0;
                     if (roomStartTime && submitTime > roomStartTime) {
                         diff = (submitTime - roomStartTime) / 1000;
                     }
-                    const timeStr = (roomStartTime && diff > 0) ? diff.toFixed(2) : 'N/A';
-                    const answerText = item.answer_text || item.answer || "";
-                    content = `${item.name}|${answerText}|${timeStr}`;
+                    
+                    // Nếu có thời gian nộp hợp lệ, tiến hành kiểm tra điều kiện đáp án
+                    if (roomStartTime && diff > 0) {
+                        // SỬA LỖI TẠI ĐÂY: Nếu làm đúng thì lấy số giây thực tế, nếu làm sai quy đổi thẳng về 0.00
+                        timeStr = isCorrect ? diff.toFixed(2) : '0.00';
+                    } else {
+                        timeStr = '0.00';
+                    }
                 }
 
-                div.textContent = content;
-                resultsContainer.appendChild(div);
+                // Render hàng dữ liệu cho cụm Đáp án
+                const rowAnswer = document.createElement('div');
+                rowAnswer.className = 'result-row';
+                rowAnswer.textContent = `${item.name}|${answerText}`;
+                answerSection.appendChild(rowAnswer);
+
+                // Render hàng dữ liệu cho cụm Thời gian
+                const rowTime = document.createElement('div');
+                rowTime.className = 'result-row';
+                rowTime.textContent = `${item.name}|${timeStr}`;
+                timeSection.appendChild(rowTime);
             });
+
+            resultsContainer.appendChild(answerSection);
+            resultsContainer.appendChild(timeSection);
         }
 
         async function init() {
@@ -179,8 +242,10 @@
             supabase.channel('room_channel')
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `room_code=eq.${roomCode}` },
                     (payload) => {
-                        if ('answer_open_time' in payload.new) {
+                        // Lắng nghe cập nhật của phòng bao gồm cả sự thay đổi của đáp án đúng mới
+                        if ('answer_open_time' in payload.new || 'correct_answer' in payload.new) {
                             roomStartTime = payload.new.answer_open_time ? new Date(payload.new.answer_open_time).getTime() : 0;
+                            roomCorrectAnswer = payload.new.correct_answer ? payload.new.correct_answer.toString().trim().toUpperCase() : null;
                             fetchAndRender(); 
                         }
                     })

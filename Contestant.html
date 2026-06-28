@@ -238,19 +238,16 @@
         const roomCodeInput = document.getElementById("roomCode");
         const nameSelect = document.getElementById("name");
 
-        // Hàm kiểm tra và tự động giữ focus cho ô đáp án khi đang mở câu hỏi
         function keepFocusAnswer() {
             if (!lockedAnswer && document.activeElement !== answerInput) {
                 answerInput.focus();
             }
         }
 
-        // Ép giữ focus liên tục bằng cách lắng nghe sự kiện mất tập trung (blur)
         answerInput.addEventListener("blur", () => {
             setTimeout(keepFocusAnswer, 10);
         });
 
-        // Đảm bảo khi người dùng chuyển từ tab khác quay trở lại tab này thì lập tức focus lại
         window.addEventListener("focus", keepFocusAnswer);
         document.addEventListener("visibilitychange", () => {
             if (document.visibilityState === "visible") keepFocusAnswer();
@@ -264,12 +261,13 @@
                 return;
             }
 
-            const { data } = await supabase.from('participants').select('name').eq('room_code', roomCode);
+            const { data } = await supabase.from('participants').select('name, role').eq('room_code', roomCode);
             nameSelect.innerHTML = '<option value="">-- Chọn tên --</option>';
 
             if (data && data.length > 0) {
+                // SỬA TẠI ĐÂY: Chỉ lấy người dùng có role là contestant hoặc Thí sinh, loại bỏ hoàn toàn Host/Quản lý
                 const filteredNames = data
-                    .filter(p => p.name !== "Host" && !p.name.startsWith("SYNC_"))
+                    .filter(p => p.name !== "Host" && !p.name.startsWith("SYNC_") && (p.role === 'contestant' || p.role === 'Thí sinh'))
                     .map(p => p.name.trim());
 
                 const uniqueNames = [...new Set(filteredNames)];
